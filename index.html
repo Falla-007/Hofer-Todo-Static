@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>To-Do Liste</title>
+  <style>
+    /* --- Basislayout und Schrift --- */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    /* --- Header-Bereich --- */
+    header {
+      background-color: #4caf50;
+      color: #fff;
+      padding: 1em;
+      text-align: center;
+      font-size: 1.5em;
+      position: relative;
+    }
+
+    /* --- Login-Bereich (Standard: oben rechts) --- */
+    #login-section {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    #login-section form {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    #login-section input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      min-width: 120px;
+    }
+    #login-section button {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background-color 0.2s ease-in-out;
+    }
+    #login-section button:hover {
+      background-color: #0056b3;
+    }
+
+    /* --- Hauptinhalt --- */
+    main {
+      margin: 20px auto;
+      max-width: 1100px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* --- Tabellen-Container: ermöglicht horizontales Scrollen --- */
+    #table-section {
+      overflow-x: auto;
+    }
+
+    /* --- Tabelle (feste Spaltenbreiten) --- */
+    table {
+      /* 8 Spalten x mind. 120 px => mind. 960 px */
+      min-width: 960px;
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      table-layout: fixed;
+    }
+    table thead {
+      background-color: #4caf50;
+      color: #fff;
+    }
+    table th,
+    table td {
+      border: 1px solid #ddd;
+      padding: 15px;
+      text-align: center;
+      font-size: 14px;
+      vertical-align: middle;
+      min-width: 120px;
+    }
+
+    /* --- Input-Felder in den Zellen --- */
+    /* Datum etwas größer (16px) und mehr Padding */
+    td input[type="date"] {
+      font-size: 16px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    td input[type="text"] {
+      font-size: 14px;
+      padding: 8px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    /* Checkbox-Label: minimaler Abstand */
+    .done-label {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .done-label input[type="checkbox"] {
+      margin-right: 4px;
+    }
+
+    /* --- Allgemeine Buttons (Zeile hinzufügen) --- */
+    button {
+      background-color: #4caf50;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background-color 0.2s ease-in-out;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+
+    /* ------ Responsive Layout ------ */
+    /* --- Tablet-Bereich --- */
+    @media (max-width: 768px) {
+      header {
+        font-size: 1.2em;
+      }
+      #login-section {
+        position: static;
+        margin-top: 10px;
+        justify-content: center;
+      }
+      main {
+        padding: 10px;
+        margin-top: 0;
+      }
+      table th, table td {
+        font-size: 12px;
+        padding: 10px;
+      }
+    }
+
+    /* --- Smartphone-Bereich --- */
+    @media (max-width: 480px) {
+      header {
+        padding: 0.5em;
+      }
+      /* Damit das fixierte Login unten nicht alles überlappt */
+      body {
+        padding-bottom: 130px; /* Platz reservieren für Login */
+      }
+      main {
+        margin-top: 0;
+        padding: 10px 5px;
+      }
+      table th, table td {
+        font-size: 12px;
+        padding: 8px;
+      }
+      /* Login-Bereich unten fixieren, aber kompakter */
+      #login-section {
+        position: fixed;
+        top: 80%;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 8px 10px;
+        border-radius: 8px 8px 0 0;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+      }
+      /* Inputs und Button schmaler */
+      #login-section input,
+      #login-section button {
+        width: 85%;
+        margin: 3px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  To-Do Liste
+  <div id="login-section">
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <input type="text" id="username" name="username" placeholder="Benutzername" required />
+      <input type="password" id="password" name="password" placeholder="Passwort" required />
+      <button type="submit">Anmelden</button>
+    </form>
+    <button id="logout-button" style="display: none;" onclick="handleLogout()">Abmelden</button>
+  </div>
+</header>
+
+<main>
+  <div id="table-section">
+    <table>
+      <thead>
+        <tr>
+          <th>Von</th>
+          <th>Bis</th>
+          <th>Müll</th>
+          <th>Hennen</th>
+          <th>Auto ausräumen</th>
+          <th>Bio Müll</th>
+          <th>Strom einschalten</th>
+          <th>Andere Tätigkeiten</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Dynamischer Inhalt wird hier eingefügt -->
+      </tbody>
+    </table>
+    <button id="add-row-button" style="display: none;" onclick="addRow()">Zeile hinzufügen</button>
+  </div>
+</main>
+
+<script>
+  /* ------------------------------------------------
+   * WICHTIG: Die Funktionen bleiben im Kern gleich!
+   * ------------------------------------------------ */
+  const validUsernameHash = "3510d46616b9eb08f794bd07a296658b49c8846e1d2bd3fbf843a91e3a39944a"; // SHA-256 von "hofer"
+  const validPasswordHash = "b7db987624e7c50c23c82045af4e21c4a35c24a700c855a9219a78a60faf09d6"; // SHA-256 von "todobyhofer"
+
+  /* 
+   * Datenmodell: Zu jeder Tätigkeit gibt es 
+   * - <tätigkeit> (String, wer eingetragen ist)
+   * - <tätigkeit>Done (Boolean, erledigt?)
+   * - <tätigkeit>DoneBy (String, wer hat's tatsächlich gemacht?)
+   */
+  const data = [
+    {
+      von: "2024-12-24",
+      bis: "2024-12-30",
+      muell: "Fabian",
+      muellDone: false,
+      muellDoneBy: "",
+      hennen: "Julian",
+      hennenDone: false,
+      hennenDoneBy: "",
+      auto: "Stefan",
+      autoDone: false,
+      autoDoneBy: "",
+      biomuell: "Fabian",
+      biomuellDone: false,
+      biomuellDoneBy: "",
+      strom: "Julian",
+      stromDone: false,
+      stromDoneBy: "",
+      andere: "Stefan",
+      andereDone: false,
+      andereDoneBy: ""
+    },
+    {
+      von: "2024-12-31",
+      bis: "2024-01-06",
+      muell: "Julian",
+      muellDone: false,
+      muellDoneBy: "",
+      hennen: "Stefan",
+      hennenDone: false,
+      hennenDoneBy: "",
+      auto: "Fabian",
+      autoDone: false,
+      autoDoneBy: "",
+      biomuell: "Julian",
+      biomuellDone: false,
+      biomuellDoneBy: "",
+      strom: "Stefan",
+      stromDone: false,
+      stromDoneBy: "",
+      andere: "Fabian",
+      andereDone: false,
+      andereDoneBy: ""
+    }
+    // ... beliebig fortsetzen ...
+  ];
+
+  let isEditable = false;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    renderTable();
+  });
+
+  async function hashSHA256(str) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    Promise.all([hashSHA256(username), hashSHA256(password)]).then(([usernameHash, passwordHash]) => {
+      if (usernameHash === validUsernameHash && passwordHash === validPasswordHash) {
+        isEditable = true;
+        document.getElementById("login-form").style.display = "none";
+        document.getElementById("logout-button").style.display = "block";
+        document.getElementById("add-row-button").style.display = "block";
+        renderTable();
+      } else {
+        alert("Ungültiger Benutzername oder Passwort");
+      }
+    });
+  }
+
+  function handleLogout() {
+    isEditable = false;
+    document.getElementById("login-form").style.display = "flex";
+    document.getElementById("logout-button").style.display = "none";
+    document.getElementById("add-row-button").style.display = "none";
+    renderTable();
+  }
+
+  /*
+   * Hauptfunktion: Erzeugt das Tabellen-HTML dynamisch.
+   * Checkboxen und "Wer hat's gemacht?"-Felder 
+   * werden immer angezeigt, sind jedoch nur editierbar, wenn isEditable === true
+   */
+  function renderTable() {
+    const tbody = document.querySelector("tbody");
+    tbody.innerHTML = "";
+
+    data.forEach((row, index) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <!-- Spalte "Von" -->
+        <td>
+          <input type="date"
+                 value="${row.von}"
+                 onchange="updateRow(${index}, 'von', this.value)"
+                 ${isEditable ? "" : "readonly"} />
+        </td>
+
+        <!-- Spalte "Bis" -->
+        <td>
+          <input type="date"
+                 value="${row.bis}"
+                 onchange="updateRow(${index}, 'bis', this.value)"
+                 ${isEditable ? "" : "readonly"} />
+        </td>
+
+        <!-- Müll -->
+        <td>
+          <!-- Wer eingetragen ist -->
+          <input type="text"
+                 value="${row.muell}"
+                 onchange="updateRow(${index}, 'muell', this.value)"
+                 ${isEditable ? "" : "readonly"} />
+          <!-- Immer sichtbar, aber ggf. disabled/readonly -->
+          <div>
+            <label class="done-label">
+              <input type="checkbox"
+                     ${row.muellDone ? "checked" : ""}
+                     onchange="updateRow(${index}, 'muellDone', this.checked)"
+                     ${isEditable ? "" : "disabled"} />
+              Erledigt?
+            </label>
+            <input type="text"
+                   placeholder="Wer hat's gemacht?"
+                   value="${row.muellDoneBy}"
+                   style="margin-top:4px;"
+                   onchange="updateRow(${index}, 'muellDoneBy', this.value)"
+                   ${isEditable ? "" : "readonly"} />
+          </div>
+        </td>
+
+        <!-- Hennen -->
+        <td>
+          <input type="text"
+                 value="${row.hennen}"
+                 onchange="updateRow(${index}, 'hennen', this.value)"
+                 ${isEditable ? "" : "readonly"} />
+          <div>
+            <label class="done-label">
+              <input type="checkbox"
+                     ${row.hennenDone ? "checked" : ""}
+                     onchange="updateRow(${index}, 'hennenDone', this.checked)"
+                     ${isEditable ? "" : "disabled"} />
+              Erledigt?
+            </label>
+            <input type="text"
+                   placeholder="Wer hat's gemacht?"
+                   value="${row.hennenDoneBy}"
+                   style="margin-top:4px;"
+                   onchange="updateRow(${index}, 'hennenDoneBy', this.value)"
+                   ${isEditable ? "" : "readonly"} />
+          </div>
+        </td>
+
+        <!-- Auto ausräumen -->
+        <td>
+          <input type="text"
+                 value="${row.auto}"
+                 onchange="updateRow(${index}, 'auto', this.value)"
+                 ${isEditable ? "" : "readonly"} />
+          <div>
+            <label class="done-label">
+              <input type="checkbox"
+                     ${row.autoDone ? "checked" : ""}
+                     onchange="updateRow(${index}, 'autoDone', this.checked)"
+                     ${isEditable ? "" : "disabled"} />
+              Erledigt?
+            </label>
+            <input type="text"
+                   placeholder="Wer hat's gemacht?"
+                   value="${row.autoDoneBy}"
+                   style="margin-top:4px;"
+                   onchange="updateRow(${index}, 'autoDoneBy', this.value)"
+                   ${isEditable ? "" : "readonly"} />
+          </div>
+        </td>
+
+        <!-- Bio Müll -->
+        <td>
+          <input type="text"
+                 value="${row.biomuell}"
+                 onchange="updateRow(${index}, 'biomuell', this.value)"
+                 ${isEditable ? "" : "readonly"} />
+          <div>
+            <label class="done-label">
+              <input type="checkbox"
+                     ${row.biomuellDone ? "checked" : ""}
+                     onchange="updateRow(${index}, 'biomuellDone', this.checked)"
+                     ${isEditable ? "" : "disabled"} />
+              Erledigt?
+            </label>
+            <input type="text"
+                   placeholder="Wer hat's gemacht?"
+                   value="${row.biomuellDoneBy}"
+                   style="margin-top:4px;"
+                   onchange="updateRow(${index}, 'biomuellDoneBy', this.value)"
+                   ${isEditable ? "" : "readonly"} />
+          </div>
+        </td>
+
+        <!-- Strom einschalten -->
+        <td>
+          <input type="text"
+                 value="${row.strom}"
+                 onchange="updateRow(${index}, 'strom', this.value)"
+                 ${isEditable ? "" : "readonly"} />
+          <div>
+            <label class="done-label">
+              <input type="checkbox"
+                     ${row.stromDone ? "checked" : ""}
+                     onchange="updateRow(${index}, 'stromDone', this.checked)"
+                     ${isEditable ? "" : "disabled"} />
+              Erledigt?
+            </label>
+            <input type="text"
+                   placeholder="Wer hat's gemacht?"
+                   value="${row.stromDoneBy}"
+                   style="margin-top:4px;"
+                   onchange="updateRow(${index}, 'stromDoneBy', this.value)"
+                   ${isEditable ? "" : "readonly"} />
+          </div>
+        </td>
+
+        <!-- Andere Tätigkeiten -->
+        <td>
+          <input type="text"
+                 value="${row.andere}"
+                 onchange="updateRow(${index}, 'andere', this.value)"
+                 ${isEditable ? "" : "readonly"} />
+          <div>
+            <label class="done-label">
+              <input type="checkbox"
+                     ${row.andereDone ? "checked" : ""}
+                     onchange="updateRow(${index}, 'andereDone', this.checked)"
+                     ${isEditable ? "" : "disabled"} />
+              Erledigt?
+            </label>
+            <input type="text"
+                   placeholder="Wer hat's gemacht?"
+                   value="${row.andereDoneBy}"
+                   style="margin-top:4px;"
+                   onchange="updateRow(${index}, 'andereDoneBy', this.value)"
+                   ${isEditable ? "" : "readonly"} />
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  /*
+   * Schreibt Änderungen in das data-Array
+   * (egal ob Checkbox oder Text) - 
+   * Nur wenn isEditable == true in renderTable
+   * sind die Felder nicht disabled bzw. readonly.
+   */
+  function updateRow(index, field, value) {
+    if (isEditable) {
+      data[index][field] = value;
+    }
+  }
+
+  /*
+   * addRow: Legt neue Felder (xxxDone, xxxDoneBy) 
+   * mit Defaultwerten an, damit sie sofort angezeigt werden.
+   */
+  function addRow() {
+    if (isEditable) {
+      data.push({
+        von: "",
+        bis: "",
+        muell: "",
+        muellDone: false,
+        muellDoneBy: "",
+        hennen: "",
+        hennenDone: false,
+        hennenDoneBy: "",
+        auto: "",
+        autoDone: false,
+        autoDoneBy: "",
+        biomuell: "",
+        biomuellDone: false,
+        biomuellDoneBy: "",
+        strom: "",
+        stromDone: false,
+        stromDoneBy: "",
+        andere: "",
+        andereDone: false,
+        andereDoneBy: ""
+      });
+      renderTable();
+    }
+  }
+</script>
+</body>
+</html>
